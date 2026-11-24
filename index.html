@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sıradaki Oyun: Steam oyunları ve benzer oyun önerileri</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
+<style>
+:root{--bg:#eef0f8;--surface:#fff;--ink:#1b1f3b;--muted:#5a5f80;--accent:#3d4fe0;--accent-ink:#fff;--tag:#ffe3cf;--tag-ink:#7a3200;--line:#d5d9ee;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#141733;--surface:#1e2247;--ink:#eceefc;--muted:#a3a8d0;--accent:#8c99ff;--accent-ink:#141733;--tag:#4a2c18;--tag-ink:#ffcfa8;--line:#323867;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.1;margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.hero{padding:48px 0 24px}
+.hero h1{font-size:clamp(2.2rem,7vw,4rem);font-weight:800;letter-spacing:-.03em;max-width:13ch}
+.hero p{color:var(--muted);max-width:50ch;margin:14px 0 0}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 14px}
+select,input[type=search],button{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:10px 14px;min-width:0}
+input[type=search]{flex:1 1 240px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+label.chk{display:flex;align-items:center;gap:8px;font-weight:600}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip{cursor:pointer;font-weight:600;border-radius:999px;padding:5px 14px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;text-align:left;padding:0;color:inherit}
+.card img,.noimg{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--line)}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h3{font-size:1.15rem}
+.meta{color:var(--muted);font-size:.88rem}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.tag{background:var(--tag);color:var(--tag-ink);border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:600}
+#more{display:block;margin:28px auto;cursor:pointer;font-weight:700;padding:12px 28px}
+#status{color:var(--muted);text-align:center;margin:24px 0}
+dialog{max-width:720px;width:calc(100% - 24px);border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(10,12,30,.6)}
+dialog img.big{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.dbody{padding:18px 22px 24px}
+.dbody h2{font-size:1.8rem;margin-bottom:6px}
+.close{position:absolute;top:10px;right:10px;cursor:pointer;font-weight:700}
+.sim{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.sim button{padding:0;overflow:hidden;cursor:pointer;text-align:left;font-size:.85rem;font-weight:600}
+.sim span{display:block;padding:6px 8px}
+.rank{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.rank li{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.rank .pos{font:800 1.3rem "Bricolage Grotesque",system-ui,sans-serif;min-width:2ch;text-align:center}
+.rank img{width:72px;height:40px;object-fit:cover;border-radius:8px;flex:none}
+.rank .nm{flex:1;font-weight:700;min-width:0}
+.rank .cnt{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.vote{cursor:pointer;font-weight:700;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+<h1>Sıradaki oyunun ne olsun?</h1>
+<p>Steam’deki oyunları ara, türe göre süz, bir oyunu açıp benzerlerine bak.</p>
+<div class="tools">
+<input type="search" id="q" placeholder="Oyun ara" aria-label="Oyun ara">
+<select id="order" aria-label="Sıralama">
+<option value="-added">Popüler</option>
+<option value="-rating">En yüksek puan</option>
+<option value="-released">En yeni</option>
+</select>
+<label class="chk"><input type="checkbox" id="steam" checked> Sadece Steam</label>
+</div>
+<div class="chips" id="chips"></div>
+</div></header>
+
+<main class="wrap">
+<section aria-labelledby="rt"><h2 id="rt">Yayıncı ne oynasın?</h2><p class="meta">Bir oyunu açıp oy ver. En çok oy alan en üstte görünür. Her oyuna günde bir kez oy verebilirsin.</p><ol class="rank" id="rank"></ol></section>
+<h2 style="margin:32px 0 14px">Tüm oyunlar</h2>
+<div class="grid" id="list"></div>
+<p id="status" role="status"></p>
+<button id="more" hidden>Daha fazla oyun yükle</button>
+</main>
+
+<dialog id="dlg" aria-label="Oyun detayı">
+<button class="close" id="x" aria-label="Kapat">Kapat</button>
+<div id="dcontent"></div>
+</dialog>
+
+<footer><div class="wrap">Oyun verileri ve görselleri <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a> kaynaklıdır.</div></footer>
+
+<script>
+var TR={action:"Aksiyon",indie:"Bağımsız",adventure:"Macera","role-playing-games-rpg":"RYO",strategy:"Strateji",shooter:"Nişancı",casual:"Rahat",simulation:"Simülasyon",puzzle:"Bulmaca",arcade:"Atari",platformer:"Platform",racing:"Yarış","massively-multiplayer":"MMO",sports:"Spor",fighting:"Dövüş",family:"Aile",educational:"Eğitici",card:"Kart","board-games":"Masa"};
+var st={page:1,genre:"",next:false},$=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function img(u,w,h){return u?u.replace("/media/","/media/crop/"+w+"/"+h+"/"):""}
+function api(p){return fetch("/api/games?"+new URLSearchParams(p)).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+function gname(g){return TR[g.slug]||g.name}
+function card(g){
+ var im=g.background_image?'<img loading="lazy" alt="" src="'+esc(img(g.background_image,600,340))+'">':'<div class="noimg"></div>';
+ var y=g.released?g.released.slice(0,4):"";
+ var r=g.rating?"★ "+g.rating.toFixed(1):"";
+ return '<button class="card" data-slug="'+esc(g.slug)+'">'+im+'<div class="body"><h3>'+esc(g.name)+'</h3><div class="meta">'+[y,r].filter(Boolean).join("  ")+'</div><div class="tags">'+(g.genres||[]).slice(0,3).map(function(x){return '<span class="tag">'+esc(gname(x))+'</span>'}).join("")+'</div></div></button>';
+}
+function params(){
+ var p={page:st.page,page_size:24,ordering:$("order").value};
+ if($("q").value.trim())p.search=$("q").value.trim();
+ if(st.genre)p.genres=st.genre;
+ if($("steam").checked)p.stores="1";
+ return p;
+}
+function load(reset){
+ if(reset){st.page=1;$("list").innerHTML=""}
+ $("status").textContent="Yükleniyor…";$("more").hidden=true;
+ api(params()).then(function(d){
+  $("list").insertAdjacentHTML("beforeend",(d.results||[]).map(card).join(""));
+  st.next=!!d.next;$("more").hidden=!st.next;
+  $("status").textContent=$("list").children.length?"":"Eşleşen oyun yok. Aramayı kısaltmayı ya da filtreyi kaldırmayı dene.";
+ }).catch(function(){$("status").textContent="Oyunlar yüklenemedi. Sayfayı yenile ya da biraz sonra tekrar dene."});
+}
+var t;$("q").oninput=function(){clearTimeout(t);t=setTimeout(function(){load(true)},400)};
+$("order").onchange=function(){load(true)};$("steam").onchange=function(){load(true)};
+$("more").onclick=function(){st.page++;load(false)};
+api({endpoint:"genres"}).then(function(d){
+ var c=$("chips");var all=[{slug:"",name:"Hepsi"}].concat(d.results||[]);
+ function draw(){c.innerHTML="";all.forEach(function(g){var b=document.createElement("button");b.className="chip";b.textContent=g.slug?gname(g):g.name;b.setAttribute("aria-pressed",st.genre===g.slug?"true":"false");b.onclick=function(){st.genre=g.slug;draw();load(true)};c.appendChild(b)})}
+ draw();
+}).catch(function(){});
+$("list").onclick=function(e){var b=e.target.closest(".card");if(b)openGame(b.getAttribute("data-slug"))};
+function openGame(slug){
+ $("dcontent").innerHTML='<p style="padding:24px">Yükleniyor…</p>';$("dlg").showModal();
+ api({id:slug}).then(function(g){
+  var desc=(g.description_raw||"").slice(0,650);if((g.description_raw||"").length>650)desc+="…";
+  $("dcontent").innerHTML=(g.background_image?'<img class="big" alt="" src="'+esc(img(g.background_image,800,450))+'">':"")+'<div class="dbody"><h2>'+esc(g.name)+'</h2><div class="meta">'+esc([g.released,g.rating?"★ "+g.rating:"",(g.developers||[]).slice(0,2).map(function(x){return x.name}).join(", ")].filter(Boolean).join("  "))+'</div><p>'+esc(desc)+'</p><div class="tags">'+(g.genres||[]).map(function(x){return '<span class="tag">'+esc(gname(x))+'</span>'}).join("")+'</div><p><a href="https://rawg.io/games/'+esc(g.slug)+'" target="_blank" rel="noopener">RAWG’da gör</a></p><p><button class="vote" id="vb">Yayıncı bunu oynasın, oy ver</button></p><h3>Benzer oyunlar</h3><div class="sim" id="sim">Yükleniyor…</div></div>';
+  $("vb").onclick=function(){vote(g,$("vb"))};var gi=(g.genres||[]).slice(0,2).map(function(x){return x.id}).join(",");
+  var ti=(g.tags||[]).slice(0,2).map(function(x){return x.id}).join(",");
+  var p={page_size:9,ordering:"-added"};if(gi)p.genres=gi;if(ti)p.tags=ti;if($("steam").checked)p.stores="1";
+  return api(p).then(function(d){
+   var r=(d.results||[]).filter(function(x){return x.slug!==g.slug}).slice(0,8);
+   $("sim").innerHTML=r.length?r.map(function(x){return '<button data-s="'+esc(x.slug)+'">'+(x.background_image?'<img alt="" src="'+esc(img(x.background_image,300,170))+'" style="width:100%;display:block">':"")+'<span>'+esc(x.name)+'</span></button>'}).join(""):"Benzer oyun bulunamadı.";
+  });
+ }).catch(function(){$("dcontent").innerHTML='<p style="padding:24px">Oyun bilgisi yüklenemedi.</p>'});
+}
+$("dcontent").onclick=function(e){var b=e.target.closest("[data-s]");if(b)openGame(b.getAttribute("data-s"))};
+$("x").onclick=function(){$("dlg").close()};
+$("dlg").addEventListener("click",function(e){if(e.target===$("dlg"))$("dlg").close()});
+var ranked=[];
+function loadRank(){
+ fetch("/api/vote").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+  ranked=d;
+  $("rank").innerHTML=d.length?d.map(function(x,i){return '<li><span class="pos">'+(i+1)+'</span>'+(x.image?'<img alt="" src="'+esc(img(x.image,200,110))+'">':"")+'<span class="nm">'+esc(x.name)+'</span><span class="cnt">'+x.votes+' oy</span><button class="vote" data-i="'+i+'">Oy ver</button></li>'}).join(""):'<li class="meta">Henüz oy yok. İlk oyu sen ver: bir oyunu aç ve oy ver butonuna bas.</li>';
+ }).catch(function(){$("rank").innerHTML='<li class="meta">Oylama şu an kullanılamıyor.</li>'});
+}
+function vote(g,btn){
+ var label=btn.textContent;btn.disabled=true;
+ fetch("/api/vote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({slug:g.slug,name:g.name,image:g.background_image||""})})
+ .then(function(r){return r.json()}).then(function(d){
+  btn.textContent=d.ok?"Oyun kaydedildi":d.already?"Bu oyuna bugün oy verdin":"Oy verilemedi";
+  loadRank();
+ }).catch(function(){btn.textContent="Oy verilemedi"}).then(function(){setTimeout(function(){btn.disabled=false;btn.textContent=label},2500)});
+}
+$("rank").onclick=function(e){var b=e.target.closest("[data-i]");if(!b)return;var x=ranked[b.getAttribute("data-i")];vote({slug:x.slug,name:x.name,background_image:x.image},b)};
+loadRank();
+load(true);
+</script>
+</body>
+</html>
